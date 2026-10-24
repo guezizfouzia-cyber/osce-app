@@ -1,0 +1,1141 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>نظام إدارة امتحانات OSCE - كلية الطب ورقلة</title>
+  
+  <!-- المكتبات الخارجية المستوردة CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+
+  <!-- تخصيص إطار العمل Tailwind CSS -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            medDark: '#0a0f1d',
+            medGlass: 'rgba(15, 23, 42, 0.75)',
+            glowGreen: '#10b981',
+            glowOrange: '#f97316',
+            glowRed: '#ef4444',
+            glowBlue: '#3b82f6'
+          },
+          fontFamily: {
+            cairo: ['Cairo', 'sans-serif'],
+            tajawal: ['Tajawal', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- التنسيقات المخصصة Custom CSS Styles -->
+  <style>
+    body {
+      font-family: 'Cairo', sans-serif;
+      background: radial-gradient(circle at 50% 20%, #1e293b 0%, #0a0f1d 80%);
+      min-height: 100vh;
+      color: #f8fafc;
+      transition: background 0.4s ease, color 0.4s ease;
+    }
+
+    /* تأثير الزجاج Glassmorphism للوضع الليلي */
+    .glass-panel {
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+      transition: background 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
+    }
+
+    /* تنسيقات الوضع الفاتح (Light Theme Styles) */
+    body.light-theme {
+      background: radial-gradient(circle at 50% 20%, #f1f5f9 0%, #cbd5e1 100%);
+      color: #0f172a;
+    }
+
+    body.light-theme .glass-panel {
+      background: rgba(255, 255, 255, 0.85);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    }
+
+    body.light-theme #timerDisplay,
+    body.light-theme h1,
+    body.light-theme h2,
+    body.light-theme h3,
+    body.light-theme .text-white {
+      color: #0f172a !important;
+    }
+
+    body.light-theme .text-slate-400,
+    body.light-theme .text-slate-300,
+    body.light-theme p {
+      color: #475569 !important;
+    }
+
+    body.light-theme input,
+    body.light-theme textarea {
+      background-color: #ffffff !important;
+      color: #0f172a !important;
+      border-color: #cbd5e1 !important;
+    }
+
+    body.light-theme button.bg-slate-800,
+    body.light-theme button.bg-slate-800\/80,
+    body.light-theme button.bg-slate-800\/60 {
+      background-color: #e2e8f0 !important;
+      color: #1e293b !important;
+      border-color: #cbd5e1 !important;
+    }
+
+    body.light-theme button.bg-slate-800:hover {
+      background-color: #cbd5e1 !important;
+    }
+
+    body.light-theme footer {
+      border-color: #cbd5e1 !important;
+      color: #64748b !important;
+    }
+
+    /* أنيميشن توهج ونبض الألوان نيون */
+    @keyframes pulseGreen {
+      0%, 100% { box-shadow: 0 0 15px rgba(16, 185, 129, 0.4), inset 0 0 10px rgba(16, 185, 129, 0.2); }
+      50% { box-shadow: 0 0 35px rgba(16, 185, 129, 0.8), inset 0 0 20px rgba(16, 185, 129, 0.4); }
+    }
+
+    /* توهج برتقالي نيون فائق القوة وميض وتكبير لبطاقة الطالب الموالي */
+    @keyframes pulseOrangeUltra {
+      0%, 100% { 
+        box-shadow: 0 0 20px rgba(249, 115, 22, 0.8), 0 0 40px rgba(249, 115, 22, 0.4), inset 0 0 15px rgba(249, 115, 22, 0.3);
+        border-color: #f97316;
+        transform: scale(1);
+      }
+      50% { 
+        box-shadow: 0 0 50px rgba(249, 115, 22, 1), 0 0 90px rgba(249, 115, 22, 0.8), inset 0 0 30px rgba(249, 115, 22, 0.6);
+        border-color: #ffedd5;
+        transform: scale(1.02);
+      }
+    }
+
+    /* وميض القائمة الاسمية للطالب الموالي */
+    @keyframes listNextItemFlash {
+      0%, 100% {
+        background-color: rgba(249, 115, 22, 0.2);
+        border-color: #f97316;
+      }
+      50% {
+        background-color: rgba(249, 115, 22, 0.55);
+        border-color: #ffedd5;
+        box-shadow: 0 0 20px rgba(249, 115, 22, 0.7);
+      }
+    }
+
+    /* أنيميشن حركة السهم والشخص باتجاه الباب المفتوح */
+    @keyframes exitMotionForward {
+      0% { transform: translateX(-6px); opacity: 0.4; }
+      50% { opacity: 1; }
+      100% { transform: translateX(8px); opacity: 0.9; }
+    }
+
+    .animate-walk-forward {
+      display: inline-flex;
+      align-items: center;
+      animation: exitMotionForward 1.2s infinite ease-in-out;
+    }
+
+    .glow-active-green {
+      animation: pulseGreen 2s infinite ease-in-out;
+      border-color: #10b981 !important;
+    }
+
+    /* تطبيق التوهج الفائق القوة مع الوميض */
+    .glow-next-orange-ultra {
+      animation: pulseOrangeUltra 1s infinite ease-in-out;
+      background: rgba(249, 115, 22, 0.22) !important;
+    }
+
+    .list-next-flash {
+      animation: listNextItemFlash 1.2s infinite ease-in-out;
+    }
+
+    /* تخصيص شريط التمرير والتنقل السلس */
+    #studentsContainer {
+      scroll-behavior: smooth;
+    }
+
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.1);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #94a3b8;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #64748b;
+    }
+  </style>
+</head>
+<body class="p-2 md:p-4 flex flex-col justify-between select-none">
+
+  <!-- الصوتيات المخفية -->
+  <audio id="audioSound4" src="sound_4.mp3" preload="auto"></audio>
+  <audio id="audioSound5" src="sound_5.mp3" preload="auto"></audio>
+
+  <div>
+    <!-- Header: الشريط العلوي الحاوي على الشعار وأزرار التحكم بالامتحان في الأعلى -->
+    <header class="glass-panel rounded-2xl p-3 md:p-3.5 mb-3 flex flex-col lg:flex-row justify-between items-center gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 bg-emerald-500/10 rounded-2xl border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-xl shadow-lg">
+          <i class="fa-solid fa-user-doctor"></i>
+        </div>
+        <div>
+          <h1 class="text-lg md:text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-200 to-cyan-400 leading-tight">
+            جامعة قاصدي مرباح - ورقلة
+          </h1>
+          <p class="text-xs font-semibold text-slate-400 flex items-center gap-1.5 mt-0.5">
+            <i class="fa-solid fa-graduation-cap text-emerald-400"></i>
+            كلية الطب | نظام المحاكاة وإدارة الوقت للامتحانات السريرية (OSCE)
+          </p>
+        </div>
+      </div>
+
+      <!-- مجموعة أزرار التحكم بالمحاكاة وأدوات النظام مدمجة في الشريط العلوي -->
+      <div class="flex flex-wrap items-center justify-center sm:justify-end gap-2">
+        
+        <!-- أزرار التحكم بالمحاكاة الرئيسية -->
+        <div class="flex items-center gap-1.5 bg-slate-900/80 p-1.5 rounded-2xl border border-slate-700/80 shadow-inner">
+          <button id="btnStart" onclick="startSimulation()" class="py-2 px-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-black text-xs shadow-md shadow-emerald-900/40 flex items-center gap-1.5 transition-all">
+            <i class="fa-solid fa-play"></i> <span>بدء المحاكاة</span>
+          </button>
+
+          <button id="btnPause" onclick="pauseSimulation()" disabled class="py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-bold text-xs flex items-center gap-1.5 transition-all disabled:opacity-40">
+            <i class="fa-solid fa-pause"></i> <span>إيقاف</span>
+          </button>
+
+          <button id="btnSkip" onclick="skipToNextStudent()" disabled class="py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-bold text-xs flex items-center gap-1.5 transition-all disabled:opacity-40">
+            <i class="fa-solid fa-forward-step"></i> <span>التالي</span>
+          </button>
+        </div>
+
+        <!-- شريط وقت الامتحان المحدد للعرض -->
+        <div class="bg-slate-900/90 border border-teal-500/40 rounded-xl px-3 py-1.5 flex items-center gap-2 shadow-lg shadow-teal-950/20 h-[38px]">
+          <div class="w-6 h-6 rounded-lg bg-teal-500/20 border border-teal-500/40 flex items-center justify-center text-teal-400 text-xs">
+            <i class="fa-solid fa-stopwatch"></i>
+          </div>
+          <div class="flex items-center gap-1.5 whitespace-nowrap">
+            <span class="text-xs font-bold text-slate-400 hidden xl:inline">الوقت المحدد:</span>
+            <span id="topExamDurationBadge" class="text-xs font-black font-tajawal text-teal-300 bg-teal-950/80 border border-teal-500/50 px-2 py-0.5 rounded-lg">
+              5 دقائق
+            </span>
+          </div>
+        </div>
+
+        <!-- زر الإعدادات المنبثقة المحمية برمز سر -->
+        <button onclick="requestSettingsAccess()" class="p-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-emerald-400 transition-all text-xs flex items-center gap-1.5 font-bold h-[38px]" title="إعدادات النظام">
+          <i class="fa-solid fa-lock text-xs"></i>
+          <span class="hidden sm:inline">الإعدادات</span>
+        </button>
+
+        <!-- زر الوضع الليلي/النهاري -->
+        <button id="btnThemeToggle" onclick="toggleTheme()" class="p-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-slate-300 transition-all text-xs h-[38px]" title="تبديل الوضع">
+          <i id="themeIcon" class="fa-solid fa-moon"></i>
+        </button>
+
+        <!-- زر ملء الشاشة -->
+        <button id="btnFullscreenToggle" onclick="toggleFullscreen()" class="p-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-teal-400 transition-all text-xs h-[38px]" title="ملء الشاشة">
+          <i id="fullscreenIcon" class="fa-solid fa-expand"></i>
+        </button>
+
+      </div>
+    </header>
+
+    <!-- Main Grid Container: شبكة العرض الرئيسية -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+
+      <!-- الجانب الأيسر: المؤقت والمحاكاة (7 أعمدة) -->
+      <section class="lg:col-span-7 flex flex-col gap-4">
+
+        <!-- شاشة العرض الرئيسية للمؤقت -->
+        <div class="glass-panel rounded-3xl p-5 md:p-7 relative overflow-hidden flex flex-col items-center justify-center">
+          
+          <!-- شريط الوضع والعد التنازلي -->
+          <div class="w-full flex justify-between items-center mb-2">
+            <span id="phaseBadge" class="px-3.5 py-1.5 rounded-full text-xs font-black tracking-wider uppercase bg-slate-800 border border-slate-700 text-slate-300">
+              في انتظار بدء المحاكاة
+            </span>
+            <span id="statusIndicator" class="flex items-center gap-2 text-xs text-slate-400 font-bold">
+              <span class="w-2.5 h-2.5 rounded-full bg-slate-500"></span> غير نشط
+            </span>
+          </div>
+
+          <!-- الرقم التنازلي البارز بوضوح فائق -->
+          <div class="my-4 md:my-5 text-center">
+            <div id="timerDisplay" class="text-7xl md:text-9xl font-black font-tajawal tracking-tight text-white drop-shadow-[0_0_25px_rgba(255,255,255,0.25)]">
+              00:00
+            </div>
+            <p id="timerSubLabel" class="text-slate-400 text-xs mt-1 font-bold">الوقت المتبقي للامتحان</p>
+          </div>
+
+          <!-- شريط التقدم Progress Bar -->
+          <div class="w-full bg-slate-900/80 rounded-full h-2.5 mb-6 overflow-hidden border border-slate-800 p-0.5">
+            <div id="progressBar" class="bg-gradient-to-r from-emerald-500 to-teal-400 h-full rounded-full transition-all duration-1000 w-full"></div>
+          </div>
+
+          <!-- بطاقات الطلاب المفتوحة والموسعة لتتسع للعبارات الكاملة بدون ضغط -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+            
+            <!-- الطالب المتواجد حالياً في كرسي الانتظار -->
+            <div id="cardWaitingStudent" class="glass-panel rounded-2xl p-5 border border-emerald-500/40 relative overflow-hidden transition-all flex flex-col justify-between min-h-[120px]">
+              <div class="text-emerald-400 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 mb-3 w-full text-center">
+                <span class="inline-flex items-center gap-1.5 text-lg">
+                  <i class="fa-solid fa-person text-emerald-400 text-base"></i>
+                  <i class="fa-solid fa-chair text-emerald-400 text-base -mr-2"></i>
+                </span>
+                <span class="font-bold text-sm">في كرسي الانتظار</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <div id="waitingBadgeNum" class="text-2xl font-black font-tajawal text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1.5 rounded-xl shrink-0">
+                  --
+                </div>
+                <div id="waitingStudentName" class="text-lg font-black text-white truncate flex-1">
+                  لا يوجد طالب
+                </div>
+              </div>
+            </div>
+
+            <!-- الطالب الموالي - إطار موسع ومكّبر بحشو مريح للعبارة الكاملة -->
+            <div id="cardNextStudent" class="glass-panel rounded-2xl p-5 border-2 border-orange-500 relative overflow-hidden transition-all flex flex-col justify-between min-h-[120px]">
+              <div class="text-orange-400 font-black uppercase tracking-wide flex items-center justify-center gap-2 mb-3 w-full text-center">
+                <span class="flex items-center gap-1.5 shrink-0 text-base">
+                  <i class="fa-solid fa-bell text-orange-400 text-base animate-bounce"></i>
+                  <span class="animate-walk-forward flex items-center gap-1">
+                    <i class="fa-solid fa-arrow-right text-[10px] text-orange-400"></i>
+                    <i class="fa-solid fa-person-walking text-orange-400 text-base"></i>
+                  </span>
+                </span>
+                <span class="text-xs md:text-[13px] font-black leading-snug break-words">توجه نحو مقعد الانتظار عند سماع صوت الجرس</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <div id="nextBadgeNum" class="text-2xl font-black font-tajawal text-white bg-gradient-to-r from-orange-600 to-amber-500 border-2 border-amber-300 px-3 py-1.5 rounded-xl shadow-[0_0_20px_rgba(249,115,22,0.9)] shrink-0">
+                  --
+                </div>
+                <div id="nextStudentName" class="text-lg font-black text-white truncate flex-1 drop-shadow-md">
+                  لا يوجد طالب
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- الجانب الأيمن: إدارة قائمة الطلاب مع التمرير التلقائي البارز (5 أعمدة) -->
+      <section class="lg:col-span-5 flex flex-col gap-4">
+
+        <div class="glass-panel rounded-3xl p-5 flex flex-col h-full justify-between">
+          
+          <div>
+            <!-- عنوان إدارة الطلاب -->
+            <div class="flex justify-between items-center mb-3">
+              <h2 class="text-base font-bold text-white flex items-center gap-2">
+                <i class="fa-solid fa-users-line text-emerald-400"></i> قائمة الطلاب (<span id="studentsCount">0</span>)
+              </h2>
+              <button onclick="openBulkModal()" class="text-xs text-emerald-400 hover:text-emerald-300 font-bold flex items-center gap-1">
+                <i class="fa-solid fa-file-import"></i> استيراد جماعي
+              </button>
+            </div>
+
+            <!-- نموذج إضافة طالب مفرد -->
+            <form onsubmit="handleAddStudent(event)" class="flex gap-2 mb-3">
+              <input type="text" id="inputStudentName" placeholder="أدخل اسم الطالب الرباعي..." required class="flex-1 bg-slate-900/90 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500 placeholder:text-slate-500">
+              <button type="submit" class="px-3.5 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold text-xs transition-all flex items-center gap-1">
+                <i class="fa-solid fa-plus"></i> إضافة
+              </button>
+            </form>
+
+            <!-- قائمة الأسماء القابلة للتمرير التلقائي والصعود الديناميكي -->
+            <div id="studentsContainer" class="max-h-[390px] overflow-y-auto space-y-2 pr-1 relative">
+              <!-- يتم إضافة بطاقات الطلاب ديناميكياً بواسطة JavaScript -->
+            </div>
+          </div>
+
+          <!-- شريط أدوات التعديل والتفريغ السفلي -->
+          <div class="pt-3 border-t border-slate-800/80 flex justify-between items-center mt-3">
+            <button onclick="clearAllStudents()" class="text-xs text-rose-400 hover:text-rose-300 font-bold flex items-center gap-1">
+              <i class="fa-solid fa-trash-can"></i> مسح جميع الأسماء
+            </button>
+            <button onclick="exportStudentsData()" class="text-xs text-slate-400 hover:text-slate-200 font-bold flex items-center gap-1">
+              <i class="fa-solid fa-download"></i> تصدير JSON
+            </button>
+          </div>
+
+        </div>
+
+      </section>
+
+    </div>
+  </div>
+
+  <!-- Footer: التذييل -->
+  <footer class="mt-4 text-center text-xs text-slate-500 font-semibold py-2.5 border-t border-slate-800/60">
+    جامعة قاصدي مرباح - ورقلة © 2026 | كلية الطب - نظام إدارة التوقيت والمحاكاة للامتحانات السريرية OSCE من إعداد قزيز فوزية
+  </footer>
+
+  <!-- Modal 1: نافذة أدخال كلمة المرور للوصول للإعدادات -->
+  <div id="modalPasswordPrompt" class="fixed inset-0 bg-black/85 backdrop-blur-md hidden z-50 flex items-center justify-center p-4">
+    <div class="glass-panel rounded-3xl p-6 w-full max-w-sm border border-slate-700 text-center shadow-2xl">
+      <div class="w-12 h-12 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex items-center justify-center mx-auto mb-3 text-amber-400 text-xl">
+        <i class="fa-solid fa-shield-halved"></i>
+      </div>
+      <h3 class="text-base font-bold text-white mb-1">التحقق من كلمة المرور</h3>
+      <p class="text-xs text-slate-400 mb-4">أدخل كلمة المرور للوصول لإعدادات المحاكاة</p>
+      <input type="password" id="inputSettingsPassword" placeholder="أدخل كلمة المرور..." onkeyup="if(event.key==='Enter') verifySettingsPassword()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-center text-white font-bold text-sm focus:outline-none focus:border-emerald-500 mb-4">
+      <div class="flex justify-center gap-2">
+        <button onclick="closePasswordPrompt()" class="w-1/2 py-2 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs">إلغاء</button>
+        <button onclick="verifySettingsPassword()" class="w-1/2 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs">دخول</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 2: نافذة الإعدادات العامة والتوقيت وتغيير كلمة السر -->
+  <div id="modalSettings" class="fixed inset-0 bg-black/80 backdrop-blur-md hidden z-50 flex items-center justify-center p-4">
+    <div class="glass-panel rounded-3xl p-6 w-full max-w-md border border-slate-700 shadow-2xl">
+      <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-800">
+        <h3 class="text-base font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-sliders text-emerald-400 text-lg"></i> إعدادات المحاكاة وكلمة المرور
+        </h3>
+        <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+
+      <div class="space-y-4 mb-5">
+        <!-- إعداد وقت الطالب -->
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1.5">وقت الطالب بالدقائق (OSCE):</label>
+          <input type="number" id="inputExamDuration" value="5" min="1" max="60" oninput="syncExamDurationDisplay()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-white font-bold text-sm focus:outline-none focus:border-emerald-500">
+        </div>
+
+        <!-- إعداد مدة الاستعداد -->
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1.5">مدة الاستعداد الأولى (ثواني):</label>
+          <input type="number" id="inputPrepDuration" value="120" min="5" max="600" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-white font-bold text-sm focus:outline-none focus:border-emerald-500">
+        </div>
+
+        <!-- إعدادات الصوت -->
+        <div class="pt-2 border-t border-slate-800">
+          <label class="block text-xs font-bold text-slate-300 mb-2">التنبيهات الصوتية والنطق الآلي:</label>
+          <button id="btnMuteToggleModal" onclick="toggleMute()" class="w-full py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 text-xs font-bold flex items-center justify-between transition-all">
+            <span class="flex items-center gap-2">
+              <i id="muteIconModal" class="fa-solid fa-volume-high text-emerald-400 text-base"></i>
+              <span id="muteTextModal">الصوت مفعل</span>
+            </span>
+            <span class="text-[10px] text-slate-400">انقر للتبديل</span>
+          </button>
+        </div>
+
+        <!-- قسم تغيير كلمة المرور -->
+        <div class="pt-3 border-t border-slate-800">
+          <label class="block text-xs font-bold text-amber-400 mb-2 flex items-center gap-1.5">
+            <i class="fa-solid fa-key"></i> تغيير كلمة مرور الإعدادات:
+          </label>
+          <div class="grid grid-cols-2 gap-2">
+            <input type="password" id="inputNewPassword" placeholder="كلمة السر الجديدة" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+            <button onclick="changeSettingsPassword()" class="bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded-xl font-bold text-xs py-2 transition-all">
+              تحديث الكلمة
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2.5 pt-2">
+        <button onclick="closeSettingsModal()" class="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs transition-all">
+          حفظ وتأكيد
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: نافذة الاستيراد الجماعي للطلاب -->
+  <div id="modalBulk" class="fixed inset-0 bg-black/80 backdrop-blur-md hidden z-50 flex items-center justify-center p-4">
+    <div class="glass-panel rounded-3xl p-6 w-full max-w-lg border border-slate-700">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-list-ol text-emerald-400"></i> إضافة دفعة طلاب دفعة واحدة
+        </h3>
+        <button onclick="closeBulkModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <p class="text-xs text-slate-400 mb-3">أدخل أسماء الطلاب (اسم واحد في كل سطر):</p>
+      <textarea id="bulkInputText" rows="8" placeholder="محمد الأمين بلقاسم&#10;فاطمة الزهراء بن علي&#10;عبد الرحمن خالدي" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-emerald-500 mb-4"></textarea>
+      <div class="flex justify-end gap-3">
+        <button onclick="closeBulkModal()" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs">إلغاء</button>
+        <button onclick="processBulkImport()" class="px-5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs">حفظ واستيراد</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: نافذة تعديل اسم الطالب -->
+  <div id="modalEdit" class="fixed inset-0 bg-black/80 backdrop-blur-md hidden z-50 flex items-center justify-center p-4">
+    <div class="glass-panel rounded-3xl p-6 w-full max-w-md border border-slate-700">
+      <h3 class="text-lg font-bold text-white mb-4">تعديل اسم الطالب</h3>
+      <input type="hidden" id="editStudentId">
+      <input type="text" id="editStudentName" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 mb-4">
+      <div class="flex justify-end gap-3">
+        <button onclick="closeEditModal()" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs">إلغاء</button>
+        <button onclick="saveEditStudent()" class="px-5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs">حفظ التغييرات</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- عنصر التنبيهات المنزلقة Toast Notifications -->
+  <div id="toast" class="fixed bottom-6 right-6 bg-slate-800 text-white border border-slate-700 px-5 py-3 rounded-2xl shadow-2xl transition-all duration-300 transform translate-y-20 opacity-0 z-50 text-sm font-bold flex items-center gap-3">
+    <i id="toastIcon" class="fa-solid fa-circle-info text-emerald-400"></i>
+    <span id="toastMessage">إشعار</span>
+  </div>
+
+  <!-- JavaScript المنطق البرمجي السلوكي -->
+  <script>
+    // --- متغيرات إدارة الحالة State Management ---
+    let students = [];
+    let activeExamIndex = -1;
+    let isRunning = false;
+    let isPaused = false;
+    let currentPhase = 'IDLE'; // 'IDLE', 'PREP', 'EXAM'
+    let remainingSeconds = 0;
+    let totalPhaseSeconds = 0;
+    let timerInterval = null;
+    let isMuted = false;
+
+    // المفاتيح المخصصة للحفظ في LocalStorage
+    const STORAGE_KEY = 'med_osce_students';
+    const PASSWORD_KEY = 'med_osce_settings_password';
+
+    // عند تحميل واجهة التطبيق
+    window.addEventListener('DOMContentLoaded', () => {
+      loadStudentsFromStorage();
+      renderStudentsList();
+      syncExamDurationDisplay();
+      updateUIState();
+      
+      // الاستماع لتغير وضع ملء الشاشة
+      document.addEventListener('fullscreenchange', handleFullscreenChange);
+      document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.addEventListener('msfullscreenchange', handleFullscreenChange);
+    });
+
+    // --- نظام حماية الإعدادات بكلمة المرور ---
+    function getStoredPassword() {
+      return localStorage.getItem(PASSWORD_KEY) || '1234';
+    }
+
+    function requestSettingsAccess() {
+      document.getElementById('inputSettingsPassword').value = '';
+      document.getElementById('modalPasswordPrompt').classList.remove('hidden');
+    }
+
+    function closePasswordPrompt() {
+      document.getElementById('modalPasswordPrompt').classList.add('hidden');
+    }
+
+    function verifySettingsPassword() {
+      const inputPass = document.getElementById('inputSettingsPassword').value;
+      const actualPass = getStoredPassword();
+
+      if (inputPass === actualPass) {
+        closePasswordPrompt();
+        openSettingsModal();
+        showToast('تم التحقق بنجاح', 'success');
+      } else {
+        showToast('كلمة المرور غير صحيحة!', 'error');
+      }
+    }
+
+    function changeSettingsPassword() {
+      const newPass = document.getElementById('inputNewPassword').value.trim();
+      if (!newPass) {
+        showToast('يرجى إدخال كلمة سر جديدة صالحة', 'error');
+        return;
+      }
+      localStorage.setItem(PASSWORD_KEY, newPass);
+      document.getElementById('inputNewPassword').value = '';
+      showToast('تم تحديث كلمة المرور بنجاح', 'success');
+    }
+
+    function openSettingsModal() {
+      document.getElementById('modalSettings').classList.remove('hidden');
+    }
+
+    function closeSettingsModal() {
+      document.getElementById('modalSettings').classList.add('hidden');
+    }
+
+    // مزامنة وعرض قيمة وقت الامتحان العلوي
+    function syncExamDurationDisplay() {
+      const val = document.getElementById('inputExamDuration').value || 5;
+      document.getElementById('topExamDurationBadge').innerText = `${val} دقائق`;
+    }
+
+    // --- إدارة ملء الشاشة Fullscreen ---
+    function toggleFullscreen() {
+      if (!document.fullscreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement) {
+        if (document.documentElement.requestFullscreen) {
+          document.documentElement.requestFullscreen();
+        } else if (document.documentElement.webkitRequestFullscreen) {
+          document.documentElement.webkitRequestFullscreen();
+        } else if (document.documentElement.msRequestFullscreen) {
+          document.documentElement.msRequestFullscreen();
+        }
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+          document.webkitExitFullscreen();
+        } else if (document.msExitFullscreen) {
+          document.msExitFullscreen();
+        }
+      }
+    }
+
+    function handleFullscreenChange() {
+      const fullscreenIcon = document.getElementById('fullscreenIcon');
+      const isFS = !!(document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement);
+      if (isFS) {
+        fullscreenIcon.className = 'fa-solid fa-compress';
+        showToast('تم التبديل لنمط ملء الشاشة', 'info');
+      } else {
+        fullscreenIcon.className = 'fa-solid fa-expand';
+      }
+    }
+
+    // --- إدارة التخزين المحلي LocalStorage ---
+    function loadStudentsFromStorage() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        try {
+          students = JSON.parse(saved);
+        } catch (e) {
+          students = [];
+        }
+      }
+      
+      if (!students || students.length === 0) {
+        students = [
+          { id: 1, name: 'بن علي عبد الرؤوف' },
+          { id: 2, name: 'قاسمي مريم' },
+          { id: 3, name: 'حواشين يوسف' },
+          { id: 4, name: 'سليماني نور الهدى' },
+          { id: 5, name: 'بلخير أحمد أمين' },
+          { id: 6, name: 'مرادي محمد عبد الله' },
+          { id: 7, name: 'زياني ابتسام' },
+          { id: 8, name: 'طاهري حمزة' }
+        ];
+        saveStudentsToStorage();
+      }
+    }
+
+    function saveStudentsToStorage() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(students));
+    }
+
+    // --- الصوتيات والنطق الآلي ---
+    function playAudio(audioId) {
+      if (isMuted) return;
+      const audio = document.getElementById(audioId);
+      if (audio) {
+        audio.currentTime = 0;
+        audio.play().catch(err => console.log("Audio play blocked by browser:", err));
+      }
+    }
+
+    function speakAnnouncement(text) {
+      if (isMuted) return;
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'ar-SA';
+        utterance.rate = 0.9;
+        window.speechSynthesis.speak(utterance);
+      }
+    }
+
+    function toggleMute() {
+      isMuted = !isMuted;
+      const muteIconModal = document.getElementById('muteIconModal');
+      const muteTextModal = document.getElementById('muteTextModal');
+
+      if (isMuted) {
+        muteIconModal.className = 'fa-solid fa-volume-xmark text-rose-400 text-base';
+        muteTextModal.innerText = 'الصوت مكتوم';
+        showToast('تم كتم التنبيهات الصوتية', 'info');
+      } else {
+        muteIconModal.className = 'fa-solid fa-volume-high text-emerald-400 text-base';
+        muteTextModal.innerText = 'الصوت مفعل';
+        showToast('تم تفعيل التنبيهات الصوتية', 'success');
+      }
+    }
+
+    // --- تبديل المظهر (Theme Toggle) ---
+    function toggleTheme() {
+      const body = document.body;
+      const themeIcon = document.getElementById('themeIcon');
+      
+      body.classList.toggle('light-theme');
+      const isLight = body.classList.contains('light-theme');
+
+      if (isLight) {
+        themeIcon.className = 'fa-solid fa-sun text-amber-500';
+        showToast('تم التبديل إلى الوضع النهاري', 'info');
+      } else {
+        themeIcon.className = 'fa-solid fa-moon text-slate-300';
+        showToast('تم التبديل إلى الوضع الليلي', 'info');
+      }
+    }
+
+    // --- منطق حركة التوقيت والمحاكاة ---
+    function startSimulation() {
+      if (students.length === 0) {
+        showToast('يرجى إضافة طلاب أولاً لبدء المحاكاة', 'error');
+        return;
+      }
+
+      if (isPaused) {
+        isPaused = false;
+        isRunning = true;
+        runTimerLoop();
+        updateUIState();
+        showToast('تم استئناف المحاكاة', 'info');
+        return;
+      }
+
+      activeExamIndex = -1;
+      startPrepPhase();
+    }
+
+    function startPrepPhase() {
+      currentPhase = 'PREP';
+      isRunning = true;
+      isPaused = false;
+
+      const prepInputVal = parseInt(document.getElementById('inputPrepDuration').value) || 120;
+      remainingSeconds = prepInputVal;
+      totalPhaseSeconds = prepInputVal;
+
+      playAudio('audioSound5');
+
+      const waitingStudent = students[0];
+      const nextStudent = students[1];
+
+      let annText = `فترة الاستعداد. الطالب ${waitingStudent.name} يتواجد في كرسي الانتظار.`;
+      if (nextStudent) {
+        annText += ` تنبيه هام! الطالب ${nextStudent.name}، توجه نحو مقعد الانتظار عند سماع صوت الجرس.`;
+      }
+      speakAnnouncement(annText);
+
+      runTimerLoop();
+      updateUIState();
+    }
+
+    function startExamPhase() {
+      currentPhase = 'EXAM';
+      isRunning = true;
+      isPaused = false;
+      
+      activeExamIndex++;
+
+      const examInputVal = parseInt(document.getElementById('inputExamDuration').value) || 5;
+      remainingSeconds = examInputVal * 60;
+      totalPhaseSeconds = remainingSeconds;
+
+      playAudio('audioSound4');
+
+      const currentExamStudent = students[activeExamIndex];
+      const newWaitingStudent = students[activeExamIndex + 1];
+      const newNextStudent = students[activeExamIndex + 2];
+
+      let annText = `دخول الطالب ${currentExamStudent.name} لقاعة الامتحان.`;
+      if (newNextStudent) {
+        annText += ` تنبيه هام! الطالب ${newNextStudent.name}، توجه نحو مقعد الانتظار عند سماع صوت الجرس.`;
+      }
+      speakAnnouncement(annText);
+
+      runTimerLoop();
+      updateUIState();
+    }
+
+    function runTimerLoop() {
+      clearInterval(timerInterval);
+
+      timerInterval = setInterval(() => {
+        if (!isRunning || isPaused) {
+          clearInterval(timerInterval);
+          return;
+        }
+
+        remainingSeconds--;
+        updateTimerDisplay();
+
+        if (remainingSeconds <= 0) {
+          clearInterval(timerInterval);
+
+          if (currentPhase === 'PREP') {
+            startExamPhase();
+          } else if (currentPhase === 'EXAM') {
+            playAudio('audioSound4');
+            
+            if (activeExamIndex + 1 < students.length) {
+              startExamPhase();
+            } else {
+              finishSimulation();
+            }
+          }
+        }
+      }, 1000);
+    }
+
+    function pauseSimulation() {
+      if (!isRunning) return;
+      isPaused = true;
+      isRunning = false;
+      clearInterval(timerInterval);
+      updateUIState();
+      showToast('تم الإيقاف المؤقت', 'info');
+    }
+
+    function skipToNextStudent() {
+      if (activeExamIndex + 1 < students.length) {
+        clearInterval(timerInterval);
+        startExamPhase();
+        showToast('تم الانتقال للطالب التالي', 'info');
+      } else {
+        showToast('هذا هو الطالب الأخير في القائمة', 'info');
+      }
+    }
+
+    function finishSimulation() {
+      clearInterval(timerInterval);
+      isRunning = false;
+      isPaused = false;
+      currentPhase = 'IDLE';
+      
+      speakAnnouncement('انتهت جميع امتحانات OSCE لهذه الدفعة. شكراً لكم.');
+      showToast('اكتملت المحاكاة لجميع الطلاب بنجاح', 'success');
+      updateUIState();
+    }
+
+    // --- تحديث عناصر الواجهة UI ---
+    function updateTimerDisplay() {
+      const minutes = Math.floor(remainingSeconds / 60);
+      const seconds = remainingSeconds % 60;
+      const formatted = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+      
+      document.getElementById('timerDisplay').innerText = formatted;
+
+      const progressBar = document.getElementById('progressBar');
+      if (totalPhaseSeconds > 0) {
+        const percentage = (remainingSeconds / totalPhaseSeconds) * 100;
+        progressBar.style.width = `${percentage}%`;
+      } else {
+        progressBar.style.width = '100%';
+      }
+    }
+
+    function updateUIState() {
+      const phaseBadge = document.getElementById('phaseBadge');
+      const statusIndicator = document.getElementById('statusIndicator');
+      const cardWaiting = document.getElementById('cardWaitingStudent');
+      const cardNext = document.getElementById('cardNextStudent');
+
+      const btnStart = document.getElementById('btnStart');
+      const btnPause = document.getElementById('btnPause');
+      const btnSkip = document.getElementById('btnSkip');
+
+      if (currentPhase === 'PREP') {
+        phaseBadge.innerText = 'فترة الاستعداد الأولى';
+        phaseBadge.className = 'px-3.5 py-1.5 rounded-full text-xs font-black tracking-wider uppercase bg-amber-500/20 border border-amber-500/40 text-amber-300';
+      } else if (currentPhase === 'EXAM') {
+        phaseBadge.innerText = `امتحان جاري الآن (الطالب ${activeExamIndex + 1})`;
+        phaseBadge.className = 'px-3.5 py-1.5 rounded-full text-xs font-black tracking-wider uppercase bg-emerald-500/20 border border-emerald-500/40 text-emerald-300';
+      } else {
+        phaseBadge.innerText = 'في انتظار بدء المحاكاة';
+        phaseBadge.className = 'px-3.5 py-1.5 rounded-full text-xs font-black tracking-wider uppercase bg-slate-800 border border-slate-700 text-slate-300';
+      }
+
+      if (isRunning) {
+        statusIndicator.innerHTML = '<span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span> نشط';
+      } else if (isPaused) {
+        statusIndicator.innerHTML = '<span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> موقوف مؤقتاً';
+      } else {
+        statusIndicator.innerHTML = '<span class="w-2.5 h-2.5 rounded-full bg-slate-500"></span> غير نشط';
+      }
+
+      let waitingIdx = -1;
+      let nextIdx = -1;
+
+      if (currentPhase === 'PREP') {
+        waitingIdx = 0;
+        nextIdx = 1;
+      } else if (currentPhase === 'EXAM') {
+        waitingIdx = activeExamIndex + 1;
+        nextIdx = activeExamIndex + 2;
+      }
+
+      const waitingStudent = students[waitingIdx];
+      const nextStudent = students[nextIdx];
+
+      const waitingNameEl = document.getElementById('waitingStudentName');
+      const waitingBadgeEl = document.getElementById('waitingBadgeNum');
+      const nextNameEl = document.getElementById('nextStudentName');
+      const nextBadgeEl = document.getElementById('nextBadgeNum');
+
+      if (waitingStudent) {
+        waitingNameEl.innerText = waitingStudent.name;
+        waitingBadgeEl.innerText = `${waitingIdx + 1}`;
+        cardWaiting.classList.add('glow-active-green');
+      } else {
+        waitingNameEl.innerText = 'لا يوجد طالب';
+        waitingBadgeEl.innerText = '--';
+        cardWaiting.classList.remove('glow-active-green');
+      }
+
+      if (nextStudent) {
+        nextNameEl.innerText = nextStudent.name;
+        nextBadgeEl.innerText = `${nextIdx + 1}`;
+        cardNext.classList.add('glow-next-orange-ultra');
+      } else {
+        nextNameEl.innerText = 'لا يوجد طالب';
+        nextBadgeEl.innerText = '--';
+        cardNext.classList.remove('glow-next-orange-ultra');
+      }
+
+      btnPause.disabled = !isRunning;
+      btnSkip.disabled = !(isRunning || isPaused) || (activeExamIndex >= students.length - 1);
+      
+      if (isPaused) {
+        btnStart.innerHTML = '<i class="fa-solid fa-play"></i> <span>استئناف</span>';
+      } else {
+        btnStart.innerHTML = '<i class="fa-solid fa-play"></i> <span>بدء المحاكاة</span>';
+      }
+
+      renderStudentsList(nextIdx);
+    }
+
+    // --- عرض قائمة الطلاب والتمرير التلقائي البارز (Auto-Scroll) ---
+    function renderStudentsList(targetScrollIdx = -1) {
+      const container = document.getElementById('studentsContainer');
+      document.getElementById('studentsCount').innerText = students.length;
+
+      if (students.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-8 text-slate-500 font-bold text-sm">
+            لا توجد أسماء مسجلة حالياً
+          </div>
+        `;
+        return;
+      }
+
+      let html = '';
+      students.forEach((std, index) => {
+        let isExamining = (currentPhase === 'EXAM' && index === activeExamIndex);
+        let isWaiting = (currentPhase === 'PREP' && index === 0) || (currentPhase === 'EXAM' && index === activeExamIndex + 1);
+        let isNext = (currentPhase === 'PREP' && index === 1) || (currentPhase === 'EXAM' && index === activeExamIndex + 2);
+
+        let statusClass = 'bg-slate-900/60 border-slate-800 text-slate-300';
+        let statusTag = '';
+
+        if (isExamining) {
+          statusClass = 'bg-emerald-950/40 border-emerald-500 text-emerald-200 font-bold';
+          statusTag = '<span class="bg-emerald-500 text-black text-[10px] px-2 py-0.5 rounded-full font-black">يمتحن الآن</span>';
+        } else if (isWaiting) {
+          statusClass = 'bg-teal-950/30 border-teal-500/60 text-teal-200';
+          statusTag = '<span class="bg-teal-500/20 text-teal-300 text-[10px] px-2 py-0.5 rounded-full font-bold">في الانتظار</span>';
+        } else if (isNext) {
+          // تصميم وميض ونبض قوي لبطاقة الطالب الموالي في القائمة
+          statusClass = 'list-next-flash border-2 text-white font-black shadow-xl';
+          statusTag = '<span class="bg-orange-500 text-white text-[10px] px-2.5 py-0.5 rounded-full font-black animate-pulse">الموالي - توجه للمقعد عند الجرس</span>';
+        }
+
+        html += `
+          <div id="student-item-${index}" class="p-3 rounded-xl border ${statusClass} flex justify-between items-center transition-all duration-300">
+            <div class="flex items-center gap-3 overflow-hidden">
+              <span class="text-sm font-black text-slate-400 min-w-[28px]">${index + 1}</span>
+              <span class="text-sm font-bold truncate">${std.name}</span>
+            </div>
+            <div class="flex items-center gap-2">
+              ${statusTag}
+              <button onclick="openEditModal(${std.id})" class="text-slate-400 hover:text-emerald-400 p-1"><i class="fa-solid fa-pen-to-square"></i></button>
+              <button onclick="deleteStudent(${std.id})" class="text-slate-400 hover:text-rose-400 p-1"><i class="fa-solid fa-trash-can"></i></button>
+            </div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+
+      // الحركة التلقائية لتمرير القائمة والصعود إلى أعلى ليصبح الطالب الموالي ظاهر بارز
+      if (targetScrollIdx >= 0) {
+        setTimeout(() => {
+          const targetEl = document.getElementById(`student-item-${targetScrollIdx}`);
+          if (targetEl && container) {
+            const containerHeight = container.clientHeight;
+            const targetTop = targetEl.offsetTop;
+            container.scrollTop = targetTop - (containerHeight / 2) + (targetEl.clientHeight / 2);
+          }
+        }, 100);
+      }
+    }
+
+    // --- إدراج وتعديل وحذف الطلاب ---
+    function handleAddStudent(e) {
+      e.preventDefault();
+      const input = document.getElementById('inputStudentName');
+      const name = input.value.trim();
+      if (!name) return;
+
+      const newStudent = {
+        id: Date.now(),
+        name: name
+      };
+
+      students.push(newStudent);
+      saveStudentsToStorage();
+      input.value = '';
+      renderStudentsList();
+      updateUIState();
+      showToast('تمت إضافة الطالب بنجاح', 'success');
+    }
+
+    function deleteStudent(id) {
+      students = students.filter(s => s.id !== id);
+      saveStudentsToStorage();
+      renderStudentsList();
+      updateUIState();
+      showToast('تم حذف الطالب', 'info');
+    }
+
+    function clearAllStudents() {
+      if (confirm('هل أنت تأكد من رغبتك في مسح كافة الطلاب من القائمة؟')) {
+        students = [];
+        saveStudentsToStorage();
+        renderStudentsList();
+        updateUIState();
+        showToast('تم مسح جميع الأسماء', 'info');
+      }
+    }
+
+    // --- الاستيراد الجماعي للطلاب ---
+    function openBulkModal() {
+      document.getElementById('modalBulk').classList.remove('hidden');
+    }
+
+    function closeBulkModal() {
+      document.getElementById('modalBulk').classList.add('hidden');
+      document.getElementById('bulkInputText').value = '';
+    }
+
+    function processBulkImport() {
+      const text = document.getElementById('bulkInputText').value;
+      const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+
+      if (lines.length === 0) {
+        showToast('يرجى كتابة اسم واحد على الأقل', 'error');
+        return;
+      }
+
+      lines.forEach((name, idx) => {
+        students.push({
+          id: Date.now() + idx,
+          name: name
+        });
+      });
+
+      saveStudentsToStorage();
+      renderStudentsList();
+      updateUIState();
+      closeBulkModal();
+      showToast(`تمت إضافة ${lines.length} طالب بنجاح`, 'success');
+    }
+
+    // --- تعديل بيانات طالب ---
+    function openEditModal(id) {
+      const student = students.find(s => s.id === id);
+      if (!student) return;
+
+      document.getElementById('editStudentId').value = student.id;
+      document.getElementById('editStudentName').value = student.name;
+      document.getElementById('modalEdit').classList.remove('hidden');
+    }
+
+    function closeEditModal() {
+      document.getElementById('modalEdit').classList.add('hidden');
+    }
+
+    function saveEditStudent() {
+      const id = parseInt(document.getElementById('editStudentId').value);
+      const newName = document.getElementById('editStudentName').value.trim();
+
+      if (!newName) return;
+
+      const student = students.find(s => s.id === id);
+      if (student) {
+        student.name = newName;
+        saveStudentsToStorage();
+        renderStudentsList();
+        updateUIState();
+        closeEditModal();
+        showToast('تم تعديل اسم الطالب', 'success');
+      }
+    }
+
+    // --- تصدير البيانات بصيغة JSON ---
+    function exportStudentsData() {
+      if (students.length === 0) {
+        showToast('القائمة فارغة للتصدير', 'error');
+        return;
+      }
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(students, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `OSCE_Students_List_${new Date().toISOString().slice(0,10)}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+      showToast('تم تحميل ملف JSON', 'success');
+    }
+
+    // --- إشعارات Toast ---
+    function showToast(message, type = 'info') {
+      const toast = document.getElementById('toast');
+      const toastMessage = document.getElementById('toastMessage');
+      const toastIcon = document.getElementById('toastIcon');
+
+      toastMessage.innerText = message;
+
+      if (type === 'success') {
+        toastIcon.className = 'fa-solid fa-circle-check text-emerald-400';
+      } else if (type === 'error') {
+        toastIcon.className = 'fa-solid fa-circle-exclamation text-rose-400';
+      } else {
+        toastIcon.className = 'fa-solid fa-circle-info text-cyan-400';
+      }
+
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+
+      setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-0');
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 3000);
+    }
+  </script>
+</body>
+</html>
